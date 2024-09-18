@@ -4,14 +4,14 @@ import matplotlib.pyplot as plt
 from scipy import interpolate
 
 # Título de la aplicación
-st.title('Concentracion Vs Absorbancia (Insulina)')
+st.title('Concentración Vs Absorbancia')
 
 # Nuevos valores del calibrador (Reactivo de control)
 absorbancia_cal = np.array([0.011, 0.071, 0.237, 0.474, 0.963, 2.524])
 concentracion_cal = np.array([0, 5, 25, 50, 100, 300])
 
-# Crear un input numérico para ingresar el valor de absorbancia con 3 decimales
-absorbancia_input = st.number_input('Ingresa el valor de absorbancia:', min_value=0.001, max_value=3.0, step=0.001, value=0.275, format="%.3f")
+# Crear un input numérico para ingresar el valor de absorbancia con 3 decimales, permitiendo valores más altos
+absorbancia_input = st.number_input('Ingresa el valor de absorbancia:', min_value=0.001, max_value=10.0, step=0.001, value=0.275, format="%.3f")
 
 # Crear la función de interpolación
 interp_func = interpolate.interp1d(absorbancia_cal, concentracion_cal, kind='linear', fill_value='extrapolate')
@@ -25,12 +25,16 @@ st.write(f"La concentración correspondiente a la absorbancia {absorbancia_input
 # Generar la gráfica
 fig, ax = plt.subplots()
 
-# Limitar los ejes según los valores de entrada
-ax.set_xlim([0, concentracion * 1.1])  # Ajusta el eje X según la concentración calculada
-ax.set_ylim([0, absorbancia_input * 1.1])  # Ajusta el eje Y según la absorbancia ingresada
+# Limitar los ejes según los valores de entrada, dejando un margen del 20%
+ax.set_xlim([0, concentracion * 1.2])  # Dejar un margen del 20% en el eje X
+ax.set_ylim([0, absorbancia_input * 1.2])  # Dejar un margen del 20% en el eje Y
 
 # Gráfica de la curva de calibración
 ax.plot(concentracion_cal, absorbancia_cal, label='Curva de Calibración (Calibrador)', color='blue')
+
+# Extender la línea azul hasta cubrir todo el rango del resultado ingresado
+if concentracion > concentracion_cal[-1]:
+    ax.plot([concentracion_cal[-1], concentracion], [absorbancia_cal[-1], absorbancia_input], color='blue')
 
 # Punto del resultado ingresado
 ax.scatter(concentracion, absorbancia_input, color='red', label='Resultado')
@@ -46,6 +50,6 @@ ax.grid(True)
 st.pyplot(fig)
 
 # Agregar el disclaimer con los valores del reactivo de control
-st.write("### Parametros de Control")
+st.write("### Control")
 st.write(f"- **Absorbancia**: {absorbancia_cal}")
 st.write(f"- **Concentración**: {concentracion_cal}")
