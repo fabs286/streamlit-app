@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy import interpolate
 
 # Título de la aplicación
-st.title('Cálculo de Concentración Basado en Absorbancia')
+st.title('Concentracion Vs Absorbancia (Insulina)')
 
 # Nuevos valores del calibrador (Reactivo de control)
 absorbancia_cal = np.array([0.011, 0.071, 0.237, 0.474, 0.963, 2.524])
