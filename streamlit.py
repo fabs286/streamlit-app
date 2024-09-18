@@ -46,6 +46,6 @@ ax.grid(True)
 st.pyplot(fig)
 
 # Agregar el disclaimer con los valores del reactivo de control
-st.write("### Controls")
+st.write("### Parametros de Control")
 st.write(f"- **Absorbancia**: {absorbancia_cal}")
 st.write(f"- **Concentración**: {concentracion_cal}")
