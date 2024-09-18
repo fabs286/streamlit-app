@@ -10,8 +10,8 @@ st.title('Cálculo de Concentración Basado en Absorbancia')
 absorbancia_cal = np.array([0.1, 0.2, 0.4, 0.6, 0.8, 1.0])
 concentracion_cal = np.array([10, 20, 40, 60, 80, 100])
 
-# Crear un slider para ingresar el valor de absorbancia
-absorbancia_input = st.slider('Selecciona un valor de absorbancia:', min_value=0.1, max_value=1.0, step=0.01, value=0.275)
+# Crear un input numérico para ingresar el valor de absorbancia
+absorbancia_input = st.number_input('Ingresa el valor de absorbancia:', min_value=0.1, max_value=3.0, step=0.01, value=0.275)
 
 # Crear la función de interpolación
 interp_func = interpolate.interp1d(absorbancia_cal, concentracion_cal, kind='linear', fill_value='extrapolate')
