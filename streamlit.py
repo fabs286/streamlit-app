@@ -4,42 +4,66 @@ import matplotlib.pyplot as plt
 from scipy import interpolate
 
 # Título de la aplicación
-st.title('Concentración Vs Absorbancia')
+st.title('Cálculo de Concentración Basado en Absorbancia (Múltiples Resultados)')
 
 # Nuevos valores del calibrador (Reactivo de control)
 absorbancia_cal = np.array([0.011, 0.071, 0.237, 0.474, 0.963, 2.524])
 concentracion_cal = np.array([0, 5, 25, 50, 100, 300])
 
-# Crear un input numérico para ingresar el valor de absorbancia con 3 decimales, permitiendo valores más altos
-absorbancia_input = st.number_input('Ingresa el valor de absorbancia:', min_value=0.001, max_value=10.0, step=0.001, value=0.275, format="%.3f")
+# Crear una lista para almacenar múltiples resultados de absorbancia
+absorbancias_input = []
+
+# Función para agregar nuevos campos de absorbancia
+def agregar_resultado():
+    # Crear un input numérico para ingresar cada absorbancia con 3 decimales
+    absorbancia_input = st.number_input(f'Ingresa el valor de absorbancia {len(absorbancias_input) + 1}:', min_value=0.001, max_value=10.0, step=0.001, value=0.275, format="%.3f")
+    absorbancias_input.append(absorbancia_input)
+
+# Botón para agregar más resultados
+if st.button('Agregar nuevo resultado'):
+    agregar_resultado()
+
+# Botón para quitar el último resultado
+if st.button('Quitar último resultado'):
+    if absorbancias_input:
+        absorbancias_input.pop()
+
+# Mostrar la lista actual de absorbancias
+if absorbancias_input:
+    st.write(f"Resultados actuales de absorbancia: {absorbancias_input}")
 
 # Crear la función de interpolación
 interp_func = interpolate.interp1d(absorbancia_cal, concentracion_cal, kind='linear', fill_value='extrapolate')
 
-# Calcular la concentración correspondiente
-concentracion = interp_func(absorbancia_input)
+# Calcular las concentraciones correspondientes a cada absorbancia
+concentraciones = [interp_func(absorbancia) for absorbancia in absorbancias_input]
 
-# Mostrar el resultado
-st.write(f"La concentración correspondiente a la absorbancia {absorbancia_input:.3f} es: {concentracion:.2f} µIU/mL")
+# Mostrar los resultados en la interfaz
+for i, (absorbancia, concentracion) in enumerate(zip(absorbancias_input, concentraciones), start=1):
+    st.write(f"La concentración correspondiente a la absorbancia {absorbancia:.3f} (Resultado {i}) es: {concentracion:.2f} µIU/mL")
 
 # Generar la gráfica
 fig, ax = plt.subplots()
 
-# Limitar los ejes según los valores de entrada, dejando un margen del 20%
-ax.set_xlim([0, concentracion * 1.2])  # Dejar un margen del 20% en el eje X
-ax.set_ylim([0, absorbancia_input * 1.2])  # Dejar un margen del 20% en el eje Y
+# Limitar los ejes según los valores de entrada, dejando un margen del 20% más allá del mayor resultado
+if absorbancias_input:
+    max_concentracion = max(concentraciones)
+    max_absorbancia = max(absorbancias_input)
+else:
+    max_concentracion = max(concentracion_cal)
+    max_absorbancia = max(absorbancia_cal)
+
+ax.set_xlim([0, max_concentracion * 1.2])  # Dejar un margen del 20% en el eje X
+ax.set_ylim([0, max_absorbancia * 1.2])  # Dejar un margen del 20% en el eje Y
 
 # Gráfica de la curva de calibración
 ax.plot(concentracion_cal, absorbancia_cal, label='Curva de Calibración (Calibrador)', color='blue')
 
-# Extender la línea azul hasta cubrir todo el rango del resultado ingresado
-if concentracion > concentracion_cal[-1]:
-    ax.plot([concentracion_cal[-1], concentracion], [absorbancia_cal[-1], absorbancia_input], color='blue')
-
-# Punto del resultado ingresado
-ax.scatter(concentracion, absorbancia_input, color='red', label='Resultado')
-ax.plot([concentracion, concentracion], [0, absorbancia_input], 'k--')
-ax.plot([0, concentracion], [absorbancia_input, absorbancia_input], 'k--')
+# Graficar cada punto de resultado
+for absorbancia, concentracion in zip(absorbancias_input, concentraciones):
+    ax.scatter(concentracion, absorbancia, color='red', label='Resultado')
+    ax.plot([concentracion, concentracion], [0, absorbancia], 'k--')
+    ax.plot([0, concentracion], [absorbancia, absorbancia], 'k--')
 
 ax.set_xlabel('Concentración (µIU/mL)')
 ax.set_ylabel('Absorbancia (D.O)')
@@ -50,6 +74,6 @@ ax.grid(True)
 st.pyplot(fig)
 
 # Agregar el disclaimer con los valores del reactivo de control
-st.write("### Control")
+st.write("### Controls")
 st.write(f"- **Absorbancia**: {absorbancia_cal}")
 st.write(f"- **Concentración**: {concentracion_cal}")
