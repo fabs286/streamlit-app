@@ -77,16 +77,23 @@ fig, ax = plt.subplots()
 max_concentracion_input = max(concentraciones) if concentraciones else 0
 max_absorbancia_input = max(st.session_state.absorbancias_input)
 
-# Determine the extent of the calibration curve
+# Determine the extent of the calibration curve, using 20% margin only for values greater than the minimum
+min_concentracion_input = min(concentraciones) if concentraciones else 0
+min_absorbancia_input = min(st.session_state.absorbancias_input)
+
+# Adjust the axis limits dynamically based on the minimum and maximum values of user input and calibration
+min_concentracion_plot = min(min_concentracion_input * 0.8, concentracion_cal[0])
+min_absorbancia_plot = min(min_absorbancia_input * 0.8, absorbancia_cal[0])
+
 max_concentracion_plot = max(max_concentracion_input * 1.2, concentracion_cal[-1])
 max_absorbancia_plot = max(max_absorbancia_input * 1.2, absorbancia_cal[-1])
 
 # Set dynamic axis limits
-ax.set_xlim([0, max_concentracion_plot])
-ax.set_ylim([0, max_absorbancia_plot])
+ax.set_xlim([min_concentracion_plot, max_concentracion_plot])
+ax.set_ylim([min_absorbancia_plot, max_absorbancia_plot])
 
 # Generate calibration curve
-x_vals_cal = np.linspace(0, max_concentracion_plot, 1000)
+x_vals_cal = np.linspace(min_concentracion_plot, max_concentracion_plot, 1000)
 y_vals_cal = np.interp(x_vals_cal, concentracion_cal, absorbancia_cal)
 
 # Extend the calibration curve for high values
