@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 
 # Title of the app
 st.title('Concentración vs Absorbancia')
@@ -9,9 +10,12 @@ st.title('Concentración vs Absorbancia')
 absorbancia_cal = np.array([0.011, 0.071, 0.237, 0.474, 0.963, 2.524])
 concentracion_cal = np.array([0, 5, 25, 50, 100, 300])
 
-# Generate more reference points (100 points) for a smoother curve
-x_vals_cal = np.linspace(concentracion_cal[0], concentracion_cal[-1], 100)  # Concentration
-y_vals_cal = np.interp(x_vals_cal, concentracion_cal, absorbancia_cal)  # Interpolated absorbance values
+# Create a smooth interpolation function
+f = interp1d(absorbancia_cal, concentracion_cal, kind='cubic', fill_value='extrapolate')
+
+# Generate more reference points (1000 points) for a smoother curve
+x_vals_cal = np.linspace(min(absorbancia_cal), max(absorbancia_cal), 1000)
+y_vals_cal = f(x_vals_cal)
 
 # Initialize session state for input fields if not exists
 if 'absorbancias_input' not in st.session_state:
@@ -58,13 +62,7 @@ st.session_state.absorbancias_input = absorbancias_actualizadas
 
 # Function to handle interpolation and extrapolation
 def calculate_concentration(absorbancia_input):
-    if absorbancia_input > max(absorbancia_cal):
-        # Linear extrapolation for values above the maximum calibration point
-        slope = (concentracion_cal[-1] - concentracion_cal[-2]) / (absorbancia_cal[-1] - absorbancia_cal[-2])
-        return slope * (absorbancia_input - absorbancia_cal[-1]) + concentracion_cal[-1]
-    else:
-        # Use linear interpolation for values within or below the calibration range
-        return np.interp(absorbancia_input, absorbancia_cal, concentracion_cal)
+    return float(f(absorbancia_input))
 
 # Calculate the corresponding concentrations for each input absorbance
 concentraciones = [calculate_concentration(absorbancia) for absorbancia in st.session_state.absorbancias_input]
@@ -74,41 +72,35 @@ for i, (absorbancia, concentracion) in enumerate(zip(st.session_state.absorbanci
     st.write(f"La concentración correspondiente a la absorbancia {absorbancia:.3f} (Resultado {i}) es: {concentracion:.2f} µIU/mL")
 
 # Plotting
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(10, 6))
 
-# Calculate max values for axis limits
-max_concentracion_input = max(concentraciones) if concentraciones else 0
-max_absorbancia_input = max(st.session_state.absorbancias_input)
-
-# Determine the extent of the calibration curve, using 20% margin only for values greater than the minimum
-min_concentracion_input = min(concentraciones) if concentraciones else 0
-min_absorbancia_input = min(st.session_state.absorbancias_input)
-
-# Adjust the axis limits dynamically based on the minimum and maximum values of user input and calibration
-min_concentracion_plot = min(min_concentracion_input * 0.8, concentracion_cal[0])
-min_absorbancia_plot = min(min_absorbancia_input * 0.8, absorbancia_cal[0])
-
-max_concentracion_plot = max(max_concentracion_input * 1.2, concentracion_cal[-1])
-max_absorbancia_plot = max(max_absorbancia_input * 1.2, absorbancia_cal[-1])
-
-# Set dynamic axis limits
-ax.set_xlim([min_concentracion_plot, max_concentracion_plot])
-ax.set_ylim([min_absorbancia_plot, max_absorbancia_plot])
-
-# Plot the calibration curve with interpolated points
+# Plot smooth calibration curve
 ax.plot(x_vals_cal, y_vals_cal, label='Curva de Calibración', color='blue')
 
 # Plot user results
 for absorbancia, concentracion in zip(st.session_state.absorbancias_input, concentraciones):
-    ax.scatter(concentracion, absorbancia, color='red')
-    ax.plot([concentracion, concentracion], [0, absorbancia], 'k--')
-    ax.plot([0, concentracion], [absorbancia, absorbancia], 'k--')
+    ax.scatter(absorbancia, concentracion, color='red')
+    ax.plot([absorbancia, absorbancia], [0, concentracion], 'k--')
+    ax.plot([0, absorbancia], [concentracion, concentracion], 'k--')
 
 # Labels and legend
-ax.set_xlabel('Concentración (µIU/mL)')
-ax.set_ylabel('Absorbancia (D.O)')
+ax.set_ylabel('Concentración (µIU/mL)')
+ax.set_xlabel('Absorbancia (D.O)')
 ax.legend(['Curva de Calibración', 'Resultados'])
 ax.grid(True)
+
+# Dynamic scaling for small values and expansion for larger values
+min_absorbancia = min(min(st.session_state.absorbancias_input), min(absorbancia_cal))
+max_absorbancia = max(max(st.session_state.absorbancias_input), max(absorbancia_cal))
+min_concentracion = min(min(concentraciones), min(concentracion_cal))
+max_concentracion = max(max(concentraciones), max(concentracion_cal))
+
+if min_absorbancia < 0.1:
+    ax.set_xlim(0, max(0.1, max_absorbancia * 1.1))
+else:
+    ax.set_xlim(0, max_absorbancia * 1.1)
+
+ax.set_ylim(0, max_concentracion * 1.1)
 
 # Show plot
 st.pyplot(fig)
