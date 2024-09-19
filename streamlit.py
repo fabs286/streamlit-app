@@ -49,17 +49,28 @@ for i, absorbancia in enumerate(st.session_state.absorbancias_input):
 # Update session state with the new input values
 st.session_state.absorbancias_input = absorbancias_actualizadas
 
-# Cubic interpolation for a smoother curve
-interp_func = interpolate.interp1d(absorbancia_cal, concentracion_cal, kind='cubic', fill_value='extrapolate')
+# Linear interpolation within the calibration range
+interp_func = interpolate.interp1d(absorbancia_cal, concentracion_cal, kind='linear', bounds_error=False, fill_value="extrapolate")
 
-# Calculate the corresponding concentrations for each input absorbance
-concentraciones = [interp_func(absorbancia) for absorbancia in st.session_state.absorbancias_input]
+# Function to handle extrapolation manually beyond the calibration range
+def manual_extrapolation(absorbancia_input):
+    if absorbancia_input > max(absorbancia_cal):
+        # Calculate the slope from the last two calibration points
+        slope = (concentracion_cal[-1] - concentracion_cal[-2]) / (absorbancia_cal[-1] - absorbancia_cal[-2])
+        # Extrapolate concentration based on this slope
+        extra_concentration = slope * (absorbancia_input - absorbancia_cal[-1]) + concentracion_cal[-1]
+        return extra_concentration
+    elif absorbancia_input < min(absorbancia_cal):
+        # Extrapolate for values below the minimum calibration point
+        slope = (concentracion_cal[1] - concentracion_cal[0]) / (absorbancia_cal[1] - absorbancia_cal[0])
+        extra_concentration = slope * (absorbancia_input - absorbancia_cal[0]) + concentracion_cal[0]
+        return extra_concentration
+    else:
+        # Use interpolation for values within the calibration range
+        return interp_func(absorbancia_input)
 
-# Polynomial fit alternative (optional)
-# Uncomment these lines to use polynomial fitting instead of cubic interpolation
-# poly_coeffs = np.polyfit(absorbancia_cal, concentracion_cal, 3)
-# poly_func = np.poly1d(poly_coeffs)
-# concentraciones = [poly_func(absorbancia) for absorbancia in st.session_state.absorbancias_input]
+# Calculate the corresponding concentrations for each input absorbance using interpolation or extrapolation
+concentraciones = [manual_extrapolation(absorbancia) for absorbancia in st.session_state.absorbancias_input]
 
 # Show calculated concentrations
 for i, (absorbancia, concentracion) in enumerate(zip(st.session_state.absorbancias_input, concentraciones), start=1):
@@ -75,12 +86,14 @@ max_absorbancia = max(st.session_state.absorbancias_input + [max(absorbancia_cal
 ax.set_xlim([0, max_concentracion * 1.2])
 ax.set_ylim([0, max_absorbancia * 1.2])
 
-# Extended calibration curve using cubic interpolation
-x_vals_extendido = np.linspace(0, max_concentracion * 1.2, 100)
-y_vals_extendido = interp_func(x_vals_extendido)
-
-# Plot original calibration curve and its extended version
+# Plot the original calibration curve
 ax.plot(concentracion_cal, absorbancia_cal, label='Curva de Calibración (Original)', color='blue')
+
+# Generate extended calibration curve based on manual extrapolation
+x_vals_extendido = np.linspace(0, max_concentracion * 1.2, 100)
+y_vals_extendido = [manual_extrapolation(x) for x in x_vals_extendido]
+
+# Plot the extended calibration curve
 ax.plot(x_vals_extendido, y_vals_extendido, color='blue', linestyle='dashed')
 
 # Plot user results
