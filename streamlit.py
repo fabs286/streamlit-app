@@ -49,22 +49,15 @@ for i, absorbancia in enumerate(st.session_state.absorbancias_input):
 # Update session state with the new input values
 st.session_state.absorbancias_input = absorbancias_actualizadas
 
-# Create interpolation function
-interp_func = interpolate.interp1d(absorbancia_cal, concentracion_cal, kind='cubic', fill_value='extrapolate')
-
 # Function to handle interpolation and extrapolation
 def calculate_concentration(absorbancia_input):
-    if absorbancia_input < min(absorbancia_cal):
-        # Linear extrapolation for values below the minimum calibration point
-        slope = (concentracion_cal[1] - concentracion_cal[0]) / (absorbancia_cal[1] - absorbancia_cal[0])
-        return max(0, slope * (absorbancia_input - absorbancia_cal[0]) + concentracion_cal[0])
-    elif absorbancia_input > max(absorbancia_cal):
+    if absorbancia_input > max(absorbancia_cal):
         # Linear extrapolation for values above the maximum calibration point
         slope = (concentracion_cal[-1] - concentracion_cal[-2]) / (absorbancia_cal[-1] - absorbancia_cal[-2])
         return slope * (absorbancia_input - absorbancia_cal[-1]) + concentracion_cal[-1]
     else:
-        # Use cubic interpolation for values within the calibration range
-        return float(interp_func(absorbancia_input))
+        # Use linear interpolation for values within or below the calibration range
+        return np.interp(absorbancia_input, absorbancia_cal, concentracion_cal)
 
 # Calculate the corresponding concentrations for each input absorbance
 concentraciones = [calculate_concentration(absorbancia) for absorbancia in st.session_state.absorbancias_input]
@@ -86,10 +79,13 @@ ax.set_ylim([0, max_absorbancia * 1.2])
 
 # Generate extended calibration curve
 x_vals_extendido = np.linspace(0, max_concentracion * 1.2, 1000)
-y_vals_extendido = [calculate_concentration(x) for x in x_vals_extendido]
+y_vals_extendido = [np.interp(x, concentracion_cal, absorbancia_cal) if x <= max(concentracion_cal) else
+                    absorbancia_cal[-1] + (x - concentracion_cal[-1]) * 
+                    (absorbancia_cal[-1] - absorbancia_cal[-2]) / (concentracion_cal[-1] - concentracion_cal[-2])
+                    for x in x_vals_extendido]
 
 # Plot the extended calibration curve
-ax.plot(y_vals_extendido, x_vals_extendido, label='Curva de Calibración', color='blue')
+ax.plot(x_vals_extendido, y_vals_extendido, label='Curva de Calibración', color='blue')
 
 # Plot user results
 for absorbancia, concentracion in zip(st.session_state.absorbancias_input, concentraciones):
