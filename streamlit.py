@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate
 
+# Add this at the beginning of your script
+st.set_option('deprecation.showPyplotGlobalUse', False)
+
 # Wrap the main content in a try-except block
 try:
     # Título de la aplicación
@@ -62,19 +65,27 @@ try:
     for i, (absorbancia, concentracion) in enumerate(zip(st.session_state.absorbancias_input, concentraciones), start=1):
         st.write(f"La concentración correspondiente a la absorbancia {absorbancia:.3f} (Resultado {i}) es: {concentracion:.2f} µIU/mL")
 
+    # Generate extrapolated calibration points to extend the blue line
+    max_absorbancia_input = max(absorbancias_actualizadas)
+    if max_absorbancia_input > absorbancia_cal[-1]:
+        # Extend the calibration curve beyond the last known point
+        # Using the slope between the last two points
+        slope = (concentracion_cal[-1] - concentracion_cal[-2]) / (absorbancia_cal[-1] - absorbancia_cal[-2])
+        new_absorbancias = np.linspace(absorbancia_cal[-1], max_absorbancia_input, num=50)
+        new_concentraciones = concentracion_cal[-1] + slope * (new_absorbancias - absorbancia_cal[-1])
+
+        absorbancia_cal = np.concatenate((absorbancia_cal, new_absorbancias[1:]))
+        concentracion_cal = np.concatenate((concentracion_cal, new_concentraciones[1:]))
+
     # Generar la gráfica
     fig, ax = plt.subplots()
 
     # Limitar los ejes según los valores de entrada, dejando un margen del 20% más allá del mayor resultado
-    if absorbancias_actualizadas:
-        max_concentracion = max(concentraciones)
-        max_absorbancia = max(absorbancias_actualizadas)
-    else:
-        max_concentracion = max(concentracion_cal)
-        max_absorbancia = max(absorbancia_cal)
+    max_concentracion = max(max(concentraciones), max(concentracion_cal))
+    max_absorbancia = max(max(absorbancias_actualizadas), max(absorbancia_cal))
 
-    ax.set_xlim([0, max_concentracion * 1.2])  # Dejar un margen del 20% en el eje X
-    ax.set_ylim([0, max_absorbancia * 1.2])  # Dejar un margen del 20% en el eje Y
+    ax.set_xlim([0, max_concentracion * 1.2])
+    ax.set_ylim([0, max_absorbancia * 1.2])
 
     # Gráfica de la curva de calibración
     ax.plot(concentracion_cal, absorbancia_cal, label='Curva de Calibración (Calibrador)', color='blue')
