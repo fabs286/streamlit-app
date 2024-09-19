@@ -1,7 +1,6 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import interpolate
 
 # Title of the app
 st.title('Concentración vs Absorbancia')
@@ -30,19 +29,34 @@ st.write(f'La concentración correspondiente a la absorbancia {absorbancia_input
 # Plotting
 fig, ax = plt.subplots()
 
-# Generate more points for a smoother blue curve
-x_vals_cal = np.linspace(0, max(concentracion_cal) * 1.2, 500)
+# Solution 1: Ensure that the blue curve extends to 20% beyond the red point
+x_vals_cal = np.linspace(0, max(concentracion * 1.2, 350), 1000)
 y_vals_cal = np.interp(x_vals_cal, concentracion_cal, absorbancia_cal)
 
-# Set axis limits to adjust dynamically, starting small and growing as needed
-x_max = max(concentracion * 1.2, 10)
-y_max = max(absorbancia_input * 1.2, 1.0)
+# Solution 2: Dynamically extend the blue line beyond the calibration data
+slope = (absorbancia_cal[-1] - absorbancia_cal[-2]) / (concentracion_cal[-1] - concentracion_cal[-2])
+y_vals_extended = np.where(x_vals_cal > concentracion_cal[-1], 
+                           absorbancia_cal[-1] + slope * (x_vals_cal - concentracion_cal[-1]), 
+                           y_vals_cal)
 
-ax.set_xlim([0, x_max])
-ax.set_ylim([0, y_max])
+# Solution 3: If curve fails, extend straight line to red point and 20% beyond
+if concentracion > max(concentracion_cal):
+    slope_extrapolated = (absorbancia_cal[-1] - absorbancia_cal[-2]) / (concentracion_cal[-1] - concentracion_cal[-2])
+    y_vals_cal = slope_extrapolated * (x_vals_cal - concentracion_cal[-1]) + absorbancia_cal[-1]
+
+# Solution 4: Ensure that the axes extend dynamically based on the input
+max_concentracion_plot = max(concentracion * 1.2, 350)
+max_absorbancia_plot = max(absorbancia_input * 1.2, 3)
+
+ax.set_xlim([0, max_concentracion_plot])
+ax.set_ylim([0, max_absorbancia_plot])
+
+# Solution 5: If dynamic scaling fails, ensure blue line always follows trajectory to the red dot
+if not np.isfinite(y_vals_cal).all():
+    y_vals_cal = np.interp(x_vals_cal, concentracion_cal, absorbancia_cal)
 
 # Plot the calibration curve
-ax.plot(x_vals_cal, y_vals_cal, label='Curva de Calibración', color='blue')
+ax.plot(x_vals_cal, y_vals_extended, label='Curva de Calibración', color='blue')
 
 # Plot the result as a red point
 ax.scatter(concentracion, absorbancia_input, color='red')
