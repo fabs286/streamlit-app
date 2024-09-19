@@ -70,24 +70,28 @@ if st.button('Graficar'):
     fig, ax = plt.subplots()
     
     # Limitar los ejes según los valores de entrada, dejando un margen del 20% más allá del mayor resultado
-    max_concentracion = max(max(concentraciones), max(concentracion_cal))
-    max_absorbancia = max(max(st.session_state.absorbancias_input), max(absorbancia_cal))
+    if absorbancias_actualizadas:
+        max_concentracion = max(max(concentraciones), max(concentracion_cal))
+        max_absorbancia = max(max(st.session_state.absorbancias_input), max(absorbancia_cal))
+    else:
+        max_concentracion = max(concentracion_cal)
+        max_absorbancia = max(absorbancia_cal)
     
-    ax.set_xlim([0, max_concentracion * 1.2])
-    ax.set_ylim([0, max_absorbancia * 1.2])
+    ax.set_xlim([0, max_concentracion * 1.2])  # Dejar un margen del 20% en el eje X
+    ax.set_ylim([0, max_absorbancia * 1.2])  # Dejar un margen del 20% en el eje Y
     
     # Gráfica de la curva de calibración
     ax.plot(concentracion_cal, absorbancia_cal, label='Curva de Calibración (Calibrador)', color='blue')
     
     # Graficar cada punto de resultado
     for absorbancia, concentracion in zip(st.session_state.absorbancias_input, concentraciones):
-        ax.scatter(concentracion, absorbancia, color='red')
+        ax.scatter(concentracion, absorbancia, color='red', label='Resultado')
         ax.plot([concentracion, concentracion], [0, absorbancia], 'k--')
         ax.plot([0, concentracion], [absorbancia, absorbancia], 'k--')
     
     ax.set_xlabel('Concentración (µIU/mL)')
     ax.set_ylabel('Absorbancia (D.O)')
-    ax.legend(['Curva de Calibración (Calibrador)', 'Resultados'])
+    ax.legend()
     ax.grid(True)
     
     # Mostrar la gráfica en Streamlit
