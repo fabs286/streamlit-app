@@ -22,9 +22,15 @@ def eliminar_campo(indice):
     if len(st.session_state.absorbancias_input) > 1:
         st.session_state.absorbancias_input.pop(indice)
 
+# Button to add a new result
+if st.button('Agregar nuevo resultado'):
+    agregar_campo()
+
+# Ensure we have a local copy of absorbancias_input for updating
+absorbancias_actualizadas = list(st.session_state.absorbancias_input)
+
 # Display input fields with delete button
-absorbancias_actualizadas = []
-for i, absorbancia in enumerate(st.session_state.absorbancias_input):
+for i, absorbancia in enumerate(absorbancias_actualizadas):
     col1, col2 = st.columns([4, 1])
     
     with col1:
@@ -33,12 +39,12 @@ for i, absorbancia in enumerate(st.session_state.absorbancias_input):
             f'Absorbancia {i+1}:', 
             min_value=0.001, 
             max_value=10.0, 
-            value=float(absorbancia),
+            value=absorbancia, 
             step=0.001, 
             format="%.3f", 
             key=f'abs_input_{i}'
         )
-        absorbancias_actualizadas.append(absorbancia_input)
+        absorbancias_actualizadas[i] = absorbancia_input  # Update the local copy
 
     with col2:
         if st.button('🗑️', key=f'delete_{i}'):
