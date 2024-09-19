@@ -9,7 +9,7 @@ st.title('Concentración vs Absorbancia')
 absorbancia_cal = np.array([0.011, 0.071, 0.237, 0.474, 0.963, 2.524])
 concentracion_cal = np.array([0, 5, 25, 50, 100, 300])
 
-# Initialize session state for input fields if not exists
+# Initialize session state for input fields
 if 'absorbancias_input' not in st.session_state:
     st.session_state.absorbancias_input = [0.001]  # Default initial value
 
@@ -26,31 +26,26 @@ def eliminar_campo(indice):
 if st.button('Agregar nuevo resultado'):
     agregar_campo()
 
-# Ensure we have a local copy of absorbancias_input for updating
-absorbancias_actualizadas = list(st.session_state.absorbancias_input)
-
 # Display input fields with delete button
-for i, absorbancia in enumerate(absorbancias_actualizadas):
+absorbancias_actualizadas = []
+for i, absorbancia in enumerate(st.session_state.absorbancias_input):
     col1, col2 = st.columns([4, 1])
-    
     with col1:
-        # Properly manage session state when input changes
-        absorbancia_input = st.number_input(
+        nueva_absorbancia = st.number_input(
             f'Absorbancia {i+1}:', 
             min_value=0.001, 
             max_value=10.0, 
-            value=absorbancia, 
+            value=float(absorbancia),
             step=0.001, 
             format="%.3f", 
             key=f'abs_input_{i}'
         )
-        absorbancias_actualizadas[i] = absorbancia_input  # Update the local copy
-
+        absorbancias_actualizadas.append(nueva_absorbancia)
     with col2:
         if st.button('🗑️', key=f'delete_{i}'):
             eliminar_campo(i)
 
-# Update the session state only after all inputs are handled
+# Update session state with the new input values
 st.session_state.absorbancias_input = absorbancias_actualizadas
 
 # Function to handle interpolation and extrapolation
