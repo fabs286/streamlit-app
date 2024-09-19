@@ -29,33 +29,28 @@ st.write(f'La concentración correspondiente a la absorbancia {absorbancia_input
 # Plotting
 fig, ax = plt.subplots()
 
-# Solution 1: Ensure the blue curve extends dynamically, even for small inputs
+# Solution 1: Generate smooth blue curve points dynamically
 x_vals_cal = np.linspace(0, max(concentracion * 1.2, 10), 1000)
 y_vals_cal = np.interp(x_vals_cal, concentracion_cal, absorbancia_cal)
 
-# Solution 2: Dynamic adjustment for very small values, starting with a smaller range
+# Solution 2: Dynamic adjustment for mid-range values like 0.5
 y_max_limit = max(absorbancia_input * 1.2, 3) if absorbancia_input > 0.05 else absorbancia_input * 1.5
 x_max_limit = max(concentracion * 1.2, 350) if concentracion > 5 else concentracion * 1.5
 
-# Solution 3: Extend the calibration curve for both small and large values
+# Solution 3: Ensure blue curve extends and follows smaller/mid-range inputs
 slope = (absorbancia_cal[-1] - absorbancia_cal[-2]) / (concentracion_cal[-1] - concentracion_cal[-2])
 y_vals_extended = np.where(x_vals_cal > concentracion_cal[-1], 
                            absorbancia_cal[-1] + slope * (x_vals_cal - concentracion_cal[-1]), 
                            y_vals_cal)
 
-# Solution 4: Adjust axis scaling to shrink when small absorbance inputs are detected
-if absorbancia_input < 0.1:
-    y_max_limit = max(absorbancia_input * 2, 0.1)
-    x_max_limit = max(concentracion * 2, 1.0)
+# Solution 4: If mid-range values, scale axes more sensitively
+if 0.05 < absorbancia_input < 1.0:
+    y_max_limit = absorbancia_input * 1.3
+    x_max_limit = concentracion * 1.3
 
+# Solution 5: Adjust axis if small or mid-range values do not fit
 ax.set_xlim([0, x_max_limit])
 ax.set_ylim([0, y_max_limit])
-
-# Solution 5: Override scaling if smaller results still don't fit, ensuring curve follows result
-if y_max_limit < 1.0:
-    y_max_limit = absorbancia_input * 2
-    x_max_limit = concentracion * 2
-    y_vals_cal = np.interp(x_vals_cal, concentracion_cal, absorbancia_cal)
 
 # Plot the calibration curve
 ax.plot(x_vals_cal, y_vals_extended, label='Curva de Calibración', color='blue')
