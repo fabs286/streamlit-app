@@ -73,19 +73,25 @@ max_concentracion_input = max(concentraciones) if concentraciones else 0
 max_absorbancia_input = max(st.session_state.absorbancias_input)
 
 # Determine the extent of the calibration curve
-max_concentracion_plot = max(max_concentracion_input * 1.2, min(concentracion_cal[-1], max_concentracion_input * 1.2))
-max_absorbancia_plot = max(max_absorbancia_input * 1.2, min(absorbancia_cal[-1], max_absorbancia_input * 1.2))
+max_concentracion_plot = max(max_concentracion_input * 1.2, concentracion_cal[-1])
+max_absorbancia_plot = max(max_absorbancia_input * 1.2, absorbancia_cal[-1])
 
 # Set dynamic axis limits
 ax.set_xlim([0, max_concentracion_plot])
 ax.set_ylim([0, max_absorbancia_plot])
 
-# Generate calibration curve up to the plot limit
+# Generate calibration curve
 x_vals_cal = np.linspace(0, max_concentracion_plot, 1000)
 y_vals_cal = np.interp(x_vals_cal, concentracion_cal, absorbancia_cal)
 
+# Extend the calibration curve for high values
+slope = (absorbancia_cal[-1] - absorbancia_cal[-2]) / (concentracion_cal[-1] - concentracion_cal[-2])
+y_vals_extended = np.where(x_vals_cal > concentracion_cal[-1], 
+                           absorbancia_cal[-1] + slope * (x_vals_cal - concentracion_cal[-1]), 
+                           y_vals_cal)
+
 # Plot the calibration curve
-ax.plot(x_vals_cal, y_vals_cal, label='Curva de Calibración', color='blue')
+ax.plot(x_vals_cal, y_vals_extended, label='Curva de Calibración', color='blue')
 
 # Plot user results
 for absorbancia, concentracion in zip(st.session_state.absorbancias_input, concentraciones):
