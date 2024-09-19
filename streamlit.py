@@ -12,28 +12,29 @@ concentracion_cal = np.array([0, 5, 25, 50, 100, 300])
 
 # Estado para los resultados de absorbancia
 if 'absorbancias_input' not in st.session_state:
-    st.session_state.absorbancias_input = []
+    st.session_state.absorbancias_input = [0.0]  # Inicializamos con un valor por defecto
 
 # Función para agregar un nuevo campo de absorbancia
 def agregar_campo():
-    st.session_state.absorbancias_input.append(0.0)
+    st.session_state.absorbancias_input.append(0.0)  # Agregar un nuevo campo con valor por defecto
 
 # Función para eliminar un campo de absorbancia
 def eliminar_campo(indice):
-    st.session_state.absorbancias_input.pop(indice)
+    st.session_state.absorbancias_input.pop(indice)  # Eliminar el campo por su índice
 
 # Botón para agregar un nuevo resultado
 st.button('Agregar nuevo resultado', on_click=agregar_campo)
 
 # Mostrar los campos de absorbancia con un botón de eliminar al lado
-for i, absorbancia in enumerate(st.session_state.absorbancias_input):
+for i in range(len(st.session_state.absorbancias_input)):
     col1, col2 = st.columns([4, 1])
     with col1:
-        # Corregir la inicialización para que funcione bien con Streamlit
+        # Guardar el valor actualizado de cada campo
         st.session_state.absorbancias_input[i] = st.number_input(
             f'Absorbancia {i+1}:', min_value=0.001, max_value=10.0, step=0.001, value=st.session_state.absorbancias_input[i], format="%.3f", key=f'abs_input_{i}')
     with col2:
-        st.button('🗑️', key=f'delete_{i}', on_click=eliminar_campo, args=(i,))
+        if st.button('🗑️', key=f'delete_{i}', on_click=eliminar_campo, args=(i,)):
+            break  # Salir del bucle si se elimina un campo para evitar problemas de indexado
 
 # Botón para graficar los resultados
 if st.button('Graficar'):
