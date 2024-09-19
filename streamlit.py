@@ -40,6 +40,13 @@ y_vals_extended = np.where(x_vals_cal > concentracion_cal[-1],
                            absorbancia_cal[-1] + slope * (x_vals_cal - concentracion_cal[-1]), 
                            y_vals_cal)
 
+# Set dynamic axis limits to adjust 20% higher than the result
+max_concentracion_plot = concentracion * 1.2 if concentracion > max(concentracion_cal) else max(concentracion_cal) * 1.2
+max_absorbancia_plot = absorbancia_input * 1.2 if absorbancia_input > max(absorbancia_cal) else max(absorbancia_cal) * 1.2
+
+ax.set_xlim([0, max_concentracion_plot])
+ax.set_ylim([0, max_absorbancia_plot])
+
 # Plot the calibration curve
 ax.plot(x_vals_cal, y_vals_extended, label='Curva de Calibración', color='blue')
 
