@@ -9,6 +9,10 @@ st.title('Concentración vs Absorbancia')
 absorbancia_cal = np.array([0.011, 0.071, 0.237, 0.474, 0.963, 2.524])
 concentracion_cal = np.array([0, 5, 25, 50, 100, 300])
 
+# Generate more reference points (100 points) for a smoother curve
+x_vals_cal = np.linspace(concentracion_cal[0], concentracion_cal[-1], 100)  # Concentration
+y_vals_cal = np.interp(x_vals_cal, concentracion_cal, absorbancia_cal)  # Interpolated absorbance values
+
 # Initialize session state for input fields if not exists
 if 'absorbancias_input' not in st.session_state:
     st.session_state.absorbancias_input = [0.001]  # Default initial value
@@ -34,7 +38,6 @@ for i, absorbancia in enumerate(absorbancias_actualizadas):
     col1, col2 = st.columns([4, 1])
     
     with col1:
-        # Properly manage session state when input changes
         absorbancia_input = st.number_input(
             f'Absorbancia {i+1}:', 
             min_value=0.001, 
@@ -92,18 +95,8 @@ max_absorbancia_plot = max(max_absorbancia_input * 1.2, absorbancia_cal[-1])
 ax.set_xlim([min_concentracion_plot, max_concentracion_plot])
 ax.set_ylim([min_absorbancia_plot, max_absorbancia_plot])
 
-# Generate calibration curve
-x_vals_cal = np.linspace(min_concentracion_plot, max_concentracion_plot, 1000)
-y_vals_cal = np.interp(x_vals_cal, concentracion_cal, absorbancia_cal)
-
-# Extend the calibration curve for high values
-slope = (absorbancia_cal[-1] - absorbancia_cal[-2]) / (concentracion_cal[-1] - concentracion_cal[-2])
-y_vals_extended = np.where(x_vals_cal > concentracion_cal[-1], 
-                           absorbancia_cal[-1] + slope * (x_vals_cal - concentracion_cal[-1]), 
-                           y_vals_cal)
-
-# Plot the calibration curve
-ax.plot(x_vals_cal, y_vals_extended, label='Curva de Calibración', color='blue')
+# Plot the calibration curve with interpolated points
+ax.plot(x_vals_cal, y_vals_cal, label='Curva de Calibración', color='blue')
 
 # Plot user results
 for absorbancia, concentracion in zip(st.session_state.absorbancias_input, concentraciones):
