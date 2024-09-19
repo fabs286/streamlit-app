@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy import interpolate
 
 # Title of the app
-st.title('Concentration vs Absorbance')
+st.title('Concentración vs Absorbancia')
 
 # Calibration data
 absorbancia_cal = np.array([0.011, 0.071, 0.237, 0.474, 0.963, 2.524])
@@ -49,11 +49,17 @@ for i, absorbancia in enumerate(st.session_state.absorbancias_input):
 # Update session state with the new input values
 st.session_state.absorbancias_input = absorbancias_actualizadas
 
-# Interpolation function with extrapolation
-interp_func = interpolate.interp1d(absorbancia_cal, concentracion_cal, kind='linear', fill_value='extrapolate')
+# Cubic interpolation for a smoother curve
+interp_func = interpolate.interp1d(absorbancia_cal, concentracion_cal, kind='cubic', fill_value='extrapolate')
 
 # Calculate the corresponding concentrations for each input absorbance
 concentraciones = [interp_func(absorbancia) for absorbancia in st.session_state.absorbancias_input]
+
+# Polynomial fit alternative (optional)
+# Uncomment these lines to use polynomial fitting instead of cubic interpolation
+# poly_coeffs = np.polyfit(absorbancia_cal, concentracion_cal, 3)
+# poly_func = np.poly1d(poly_coeffs)
+# concentraciones = [poly_func(absorbancia) for absorbancia in st.session_state.absorbancias_input]
 
 # Show calculated concentrations
 for i, (absorbancia, concentracion) in enumerate(zip(st.session_state.absorbancias_input, concentraciones), start=1):
@@ -69,7 +75,7 @@ max_absorbancia = max(st.session_state.absorbancias_input + [max(absorbancia_cal
 ax.set_xlim([0, max_concentracion * 1.2])
 ax.set_ylim([0, max_absorbancia * 1.2])
 
-# Extended calibration curve
+# Extended calibration curve using cubic interpolation
 x_vals_extendido = np.linspace(0, max_concentracion * 1.2, 100)
 y_vals_extendido = interp_func(x_vals_extendido)
 
