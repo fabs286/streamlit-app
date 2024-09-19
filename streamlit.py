@@ -13,15 +13,19 @@ concentracion_cal = np.array([0, 5, 25, 50, 100, 300])
 # Inicializar el estado de la sesión si no existe
 if 'absorbancias_input' not in st.session_state:
     st.session_state.absorbancias_input = [0.001]
+if 'action' not in st.session_state:
+    st.session_state.action = None
 
 # Función para agregar un nuevo campo de absorbancia
 def agregar_campo():
     st.session_state.absorbancias_input.append(0.001)
+    st.session_state.action = 'add'
 
 # Función para eliminar un campo de absorbancia
 def eliminar_campo(indice):
     if len(st.session_state.absorbancias_input) > 1:
         st.session_state.absorbancias_input.pop(indice)
+        st.session_state.action = f'delete_{indice}'
 
 # Botón para agregar un nuevo resultado
 if st.button('Agregar nuevo resultado'):
@@ -43,9 +47,8 @@ for i, absorbancia in enumerate(st.session_state.absorbancias_input):
         )
         absorbancias_actualizadas.append(nueva_absorbancia)
     with col2:
-        if st.button('🗑️', key=f'delete_{i}'):
-            eliminar_campo(i)
-            st.experimental_rerun()
+        if st.button('🗑️', key=f'delete_{i}', on_click=eliminar_campo, args=(i,)):
+            pass
 
 # Actualizar el estado con los nuevos valores
 st.session_state.absorbancias_input = absorbancias_actualizadas
@@ -94,3 +97,6 @@ if st.button('Graficar'):
 st.write("### Controls")
 st.write(f"- **Absorbancia**: {absorbancia_cal}")
 st.write(f"- **Concentración**: {concentracion_cal}")
+
+# Reset the action after processing
+st.session_state.action = None
