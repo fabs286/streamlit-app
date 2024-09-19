@@ -4,74 +4,79 @@ import matplotlib.pyplot as plt
 from scipy import interpolate
 
 # Título de la aplicación
-st.title('Cálculo de Concentración Basado en Absorbancia (Múltiples Resultados)')
+st.title('Concentración vs Absorbancia')
 
 # Nuevos valores del calibrador (Reactivo de control)
 absorbancia_cal = np.array([0.011, 0.071, 0.237, 0.474, 0.963, 2.524])
 concentracion_cal = np.array([0, 5, 25, 50, 100, 300])
 
-# Crear una lista para almacenar múltiples resultados de absorbancia
-absorbancias_input = []
+# Estado para los resultados de absorbancia
+if 'absorbancias_input' not in st.session_state:
+    st.session_state.absorbancias_input = []
 
-# Función para agregar nuevos campos de absorbancia
-def agregar_resultado():
-    # Crear un input numérico para ingresar cada absorbancia con 3 decimales
-    absorbancia_input = st.number_input(f'Ingresa el valor de absorbancia {len(absorbancias_input) + 1}:', min_value=0.001, max_value=10.0, step=0.001, value=0.275, format="%.3f")
-    absorbancias_input.append(absorbancia_input)
+# Función para agregar un nuevo campo de absorbancia
+def agregar_campo():
+    st.session_state.absorbancias_input.append(0.0)
 
-# Botón para agregar más resultados
-if st.button('Agregar nuevo resultado'):
-    agregar_resultado()
+# Función para eliminar un campo de absorbancia
+def eliminar_campo(indice):
+    st.session_state.absorbancias_input.pop(indice)
 
-# Botón para quitar el último resultado
-if st.button('Quitar último resultado'):
-    if absorbancias_input:
-        absorbancias_input.pop()
+# Botón para agregar un nuevo resultado
+st.button('Agregar nuevo resultado', on_click=agregar_campo)
 
-# Mostrar la lista actual de absorbancias
-if absorbancias_input:
-    st.write(f"Resultados actuales de absorbancia: {absorbancias_input}")
+# Mostrar los campos de absorbancia con un botón de eliminar al lado
+for i, absorbancia in enumerate(st.session_state.absorbancias_input):
+    col1, col2 = st.columns([4, 1])
+    with col1:
+        st.session_state.absorbancias_input[i] = st.number_input(
+            f'Absorbancia {i+1}:', min_value=0.001, max_value=10.0, step=0.001, key=f'abs_input_{i}', value=absorbancia, format="%.3f")
+    with col2:
+        st.button('🗑️', key=f'delete_{i}', on_click=eliminar_campo, args=(i,))
 
-# Crear la función de interpolación
-interp_func = interpolate.interp1d(absorbancia_cal, concentracion_cal, kind='linear', fill_value='extrapolate')
+# Botón para graficar los resultados
+if st.button('Graficar'):
+    # Crear la función de interpolación
+    interp_func = interpolate.interp1d(absorbancia_cal, concentracion_cal, kind='linear', fill_value='extrapolate')
 
-# Calcular las concentraciones correspondientes a cada absorbancia
-concentraciones = [interp_func(absorbancia) for absorbancia in absorbancias_input]
+    # Calcular las concentraciones correspondientes a cada absorbancia
+    concentraciones = [interp_func(absorbancia) for absorbancia in st.session_state.absorbancias_input]
 
-# Mostrar los resultados en la interfaz
-for i, (absorbancia, concentracion) in enumerate(zip(absorbancias_input, concentraciones), start=1):
-    st.write(f"La concentración correspondiente a la absorbancia {absorbancia:.3f} (Resultado {i}) es: {concentracion:.2f} µIU/mL")
+    # Mostrar las concentraciones correspondientes
+    st.write("### Concentraciones Calculadas")
+    for i, (absorbancia, concentracion) in enumerate(zip(st.session_state.absorbancias_input, concentraciones), start=1):
+        st.write(f"Absorbancia {absorbancia:.3f} = Concentración {concentracion:.2f} µIU/mL")
 
-# Generar la gráfica
-fig, ax = plt.subplots()
+    # Generar la gráfica
+    fig, ax = plt.subplots()
 
-# Limitar los ejes según los valores de entrada, dejando un margen del 20% más allá del mayor resultado
-if absorbancias_input:
-    max_concentracion = max(concentraciones)
-    max_absorbancia = max(absorbancias_input)
-else:
-    max_concentracion = max(concentracion_cal)
-    max_absorbancia = max(absorbancia_cal)
+    # Limitar los ejes según los valores de entrada, dejando un margen del 20% más allá del mayor resultado
+    if st.session_state.absorbancias_input:
+        max_concentracion = max(concentraciones)
+        max_absorbancia = max(st.session_state.absorbancias_input)
+    else:
+        max_concentracion = max(concentracion_cal)
+        max_absorbancia = max(absorbancia_cal)
 
-ax.set_xlim([0, max_concentracion * 1.2])  # Dejar un margen del 20% en el eje X
-ax.set_ylim([0, max_absorbancia * 1.2])  # Dejar un margen del 20% en el eje Y
+    ax.set_xlim([0, max_concentracion * 1.2])  # Dejar un margen del 20% en el eje X
+    ax.set_ylim([0, max_absorbancia * 1.2])  # Dejar un margen del 20% en el eje Y
 
-# Gráfica de la curva de calibración
-ax.plot(concentracion_cal, absorbancia_cal, label='Curva de Calibración (Calibrador)', color='blue')
+    # Gráfica de la curva de calibración
+    ax.plot(concentracion_cal, absorbancia_cal, label='Curva de Calibración (Calibrador)', color='blue')
 
-# Graficar cada punto de resultado
-for absorbancia, concentracion in zip(absorbancias_input, concentraciones):
-    ax.scatter(concentracion, absorbancia, color='red', label='Resultado')
-    ax.plot([concentracion, concentracion], [0, absorbancia], 'k--')
-    ax.plot([0, concentracion], [absorbancia, absorbancia], 'k--')
+    # Graficar cada punto de resultado
+    for absorbancia, concentracion in zip(st.session_state.absorbancias_input, concentraciones):
+        ax.scatter(concentracion, absorbancia, color='red', label='Resultado')
+        ax.plot([concentracion, concentracion], [0, absorbancia], 'k--')
+        ax.plot([0, concentracion], [absorbancia, absorbancia], 'k--')
 
-ax.set_xlabel('Concentración (µIU/mL)')
-ax.set_ylabel('Absorbancia (D.O)')
-ax.legend()
-ax.grid(True)
+    ax.set_xlabel('Concentración (µIU/mL)')
+    ax.set_ylabel('Absorbancia (D.O)')
+    ax.legend()
+    ax.grid(True)
 
-# Mostrar la gráfica en Streamlit
-st.pyplot(fig)
+    # Mostrar la gráfica en Streamlit
+    st.pyplot(fig)
 
 # Agregar el disclaimer con los valores del reactivo de control
 st.write("### Controls")
