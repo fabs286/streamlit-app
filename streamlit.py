@@ -29,8 +29,9 @@ st.button('Agregar nuevo resultado', on_click=agregar_campo)
 for i, absorbancia in enumerate(st.session_state.absorbancias_input):
     col1, col2 = st.columns([4, 1])
     with col1:
+        # Corregir la inicialización para que funcione bien con Streamlit
         st.session_state.absorbancias_input[i] = st.number_input(
-            f'Absorbancia {i+1}:', min_value=0.001, max_value=10.0, step=0.001, key=f'abs_input_{i}', value=absorbancia, format="%.3f")
+            f'Absorbancia {i+1}:', min_value=0.001, max_value=10.0, step=0.001, value=st.session_state.absorbancias_input[i], format="%.3f", key=f'abs_input_{i}')
     with col2:
         st.button('🗑️', key=f'delete_{i}', on_click=eliminar_campo, args=(i,))
 
