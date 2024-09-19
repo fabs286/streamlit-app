@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 st.title('Concentración vs Absorbancia')
 
 # Calibration data
-absorbancia_cal = np.array([0.011, 0.071, 0.237, 0.474, 0.963, 2.524])
+absorbancia_cal = np.array([0.011, 0.071, 0.237])
 concentracion_cal = np.array([0, 5, 25, 50, 100, 300])
 
 # Initialize session state for input fields
