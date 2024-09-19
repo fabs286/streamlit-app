@@ -49,9 +49,6 @@ for i, absorbancia in enumerate(st.session_state.absorbancias_input):
 # Update session state with the new input values
 st.session_state.absorbancias_input = absorbancias_actualizadas
 
-# Linear interpolation within the calibration range
-interp_func = interpolate.interp1d(absorbancia_cal, concentracion_cal, kind='linear', bounds_error=False, fill_value="extrapolate")
-
 # Function to handle extrapolation manually beyond the calibration range
 def manual_extrapolation(absorbancia_input):
     if absorbancia_input > max(absorbancia_cal):
@@ -67,7 +64,7 @@ def manual_extrapolation(absorbancia_input):
         return extra_concentration
     else:
         # Use interpolation for values within the calibration range
-        return interp_func(absorbancia_input)
+        return np.interp(absorbancia_input, absorbancia_cal, concentracion_cal)
 
 # Calculate the corresponding concentrations for each input absorbance using interpolation or extrapolation
 concentraciones = [manual_extrapolation(absorbancia) for absorbancia in st.session_state.absorbancias_input]
@@ -79,22 +76,23 @@ for i, (absorbancia, concentracion) in enumerate(zip(st.session_state.absorbanci
 # Plotting
 fig, ax = plt.subplots()
 
-# Set dynamic axis limits with 20% margin beyond max input values
-max_concentracion = max(concentraciones + [max(concentracion_cal)])
-max_absorbancia = max(st.session_state.absorbancias_input + [max(absorbancia_cal)])
+# Calculate max values for axis limits
+max_concentracion = max(max(concentraciones), max(concentracion_cal))
+max_absorbancia = max(max(st.session_state.absorbancias_input), max(absorbancia_cal))
 
+# Set dynamic axis limits with 20% margin beyond max values
 ax.set_xlim([0, max_concentracion * 1.2])
 ax.set_ylim([0, max_absorbancia * 1.2])
 
-# Plot the original calibration curve
-ax.plot(concentracion_cal, absorbancia_cal, label='Curva de Calibración (Original)', color='blue')
-
-# Generate extended calibration curve based on manual extrapolation
-x_vals_extendido = np.linspace(0, max_concentracion * 1.2, 100)
-y_vals_extendido = [manual_extrapolation(x) for x in x_vals_extendido]
+# Generate extended calibration curve
+x_vals_extendido = np.linspace(0, max_concentracion * 1.2, 1000)
+y_vals_extendido = [np.interp(x, concentracion_cal, absorbancia_cal) if x <= max(concentracion_cal) else
+                    absorbancia_cal[-1] + (x - concentracion_cal[-1]) * 
+                    (absorbancia_cal[-1] - absorbancia_cal[-2]) / (concentracion_cal[-1] - concentracion_cal[-2])
+                    for x in x_vals_extendido]
 
 # Plot the extended calibration curve
-ax.plot(x_vals_extendido, y_vals_extendido, color='blue', linestyle='dashed')
+ax.plot(x_vals_extendido, y_vals_extendido, label='Curva de Calibración', color='blue')
 
 # Plot user results
 for absorbancia, concentracion in zip(st.session_state.absorbancias_input, concentraciones):
@@ -105,7 +103,7 @@ for absorbancia, concentracion in zip(st.session_state.absorbancias_input, conce
 # Labels and legend
 ax.set_xlabel('Concentración (µIU/mL)')
 ax.set_ylabel('Absorbancia (D.O)')
-ax.legend(['Curva de Calibración (Original)', 'Curva Extendida', 'Resultados'])
+ax.legend(['Curva de Calibración', 'Resultados'])
 ax.grid(True)
 
 # Show plot
