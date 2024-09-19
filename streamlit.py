@@ -1,7 +1,6 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import interpolate
 
 # Title of the app
 st.title('Concentración vs Absorbancia')
@@ -70,22 +69,23 @@ for i, (absorbancia, concentracion) in enumerate(zip(st.session_state.absorbanci
 fig, ax = plt.subplots()
 
 # Calculate max values for axis limits
-max_concentracion = max(max(concentraciones), max(concentracion_cal))
-max_absorbancia = max(max(st.session_state.absorbancias_input), max(absorbancia_cal))
+max_concentracion_input = max(concentraciones) if concentraciones else 0
+max_absorbancia_input = max(st.session_state.absorbancias_input)
 
-# Set dynamic axis limits with 20% margin beyond max values
-ax.set_xlim([0, max_concentracion * 1.2])
-ax.set_ylim([0, max_absorbancia * 1.2])
+# Determine the extent of the calibration curve
+max_concentracion_plot = max(max_concentracion_input * 1.2, min(concentracion_cal[-1], max_concentracion_input * 1.2))
+max_absorbancia_plot = max(max_absorbancia_input * 1.2, min(absorbancia_cal[-1], max_absorbancia_input * 1.2))
 
-# Generate extended calibration curve
-x_vals_extendido = np.linspace(0, max_concentracion * 1.2, 1000)
-y_vals_extendido = [np.interp(x, concentracion_cal, absorbancia_cal) if x <= max(concentracion_cal) else
-                    absorbancia_cal[-1] + (x - concentracion_cal[-1]) * 
-                    (absorbancia_cal[-1] - absorbancia_cal[-2]) / (concentracion_cal[-1] - concentracion_cal[-2])
-                    for x in x_vals_extendido]
+# Set dynamic axis limits
+ax.set_xlim([0, max_concentracion_plot])
+ax.set_ylim([0, max_absorbancia_plot])
 
-# Plot the extended calibration curve
-ax.plot(x_vals_extendido, y_vals_extendido, label='Curva de Calibración', color='blue')
+# Generate calibration curve up to the plot limit
+x_vals_cal = np.linspace(0, max_concentracion_plot, 1000)
+y_vals_cal = np.interp(x_vals_cal, concentracion_cal, absorbancia_cal)
+
+# Plot the calibration curve
+ax.plot(x_vals_cal, y_vals_cal, label='Curva de Calibración', color='blue')
 
 # Plot user results
 for absorbancia, concentracion in zip(st.session_state.absorbancias_input, concentraciones):
