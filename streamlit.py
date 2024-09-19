@@ -29,30 +29,32 @@ st.write(f'La concentración correspondiente a la absorbancia {absorbancia_input
 # Plotting
 fig, ax = plt.subplots()
 
-# Solution 1: Ensure that the blue curve extends to 20% beyond the red point
-x_vals_cal = np.linspace(0, max(concentracion * 1.2, 350), 1000)
+# Solution 1: Ensure the blue curve extends dynamically, even for small inputs
+x_vals_cal = np.linspace(0, max(concentracion * 1.2, 10), 1000)
 y_vals_cal = np.interp(x_vals_cal, concentracion_cal, absorbancia_cal)
 
-# Solution 2: Dynamically extend the blue line beyond the calibration data
+# Solution 2: Dynamic adjustment for very small values, starting with a smaller range
+y_max_limit = max(absorbancia_input * 1.2, 3) if absorbancia_input > 0.05 else absorbancia_input * 1.5
+x_max_limit = max(concentracion * 1.2, 350) if concentracion > 5 else concentracion * 1.5
+
+# Solution 3: Extend the calibration curve for both small and large values
 slope = (absorbancia_cal[-1] - absorbancia_cal[-2]) / (concentracion_cal[-1] - concentracion_cal[-2])
 y_vals_extended = np.where(x_vals_cal > concentracion_cal[-1], 
                            absorbancia_cal[-1] + slope * (x_vals_cal - concentracion_cal[-1]), 
                            y_vals_cal)
 
-# Solution 3: If curve fails, extend straight line to red point and 20% beyond
-if concentracion > max(concentracion_cal):
-    slope_extrapolated = (absorbancia_cal[-1] - absorbancia_cal[-2]) / (concentracion_cal[-1] - concentracion_cal[-2])
-    y_vals_cal = slope_extrapolated * (x_vals_cal - concentracion_cal[-1]) + absorbancia_cal[-1]
+# Solution 4: Adjust axis scaling to shrink when small absorbance inputs are detected
+if absorbancia_input < 0.1:
+    y_max_limit = max(absorbancia_input * 2, 0.1)
+    x_max_limit = max(concentracion * 2, 1.0)
 
-# Solution 4: Ensure that the axes extend dynamically based on the input
-max_concentracion_plot = max(concentracion * 1.2, 350)
-max_absorbancia_plot = max(absorbancia_input * 1.2, 3)
+ax.set_xlim([0, x_max_limit])
+ax.set_ylim([0, y_max_limit])
 
-ax.set_xlim([0, max_concentracion_plot])
-ax.set_ylim([0, max_absorbancia_plot])
-
-# Solution 5: If dynamic scaling fails, ensure blue line always follows trajectory to the red dot
-if not np.isfinite(y_vals_cal).all():
+# Solution 5: Override scaling if smaller results still don't fit, ensuring curve follows result
+if y_max_limit < 1.0:
+    y_max_limit = absorbancia_input * 2
+    x_max_limit = concentracion * 2
     y_vals_cal = np.interp(x_vals_cal, concentracion_cal, absorbancia_cal)
 
 # Plot the calibration curve
