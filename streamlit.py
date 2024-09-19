@@ -30,8 +30,8 @@ st.write(f'La concentración correspondiente a la absorbancia {absorbancia_input
 # Plotting
 fig, ax = plt.subplots()
 
-# Generate calibration curve
-x_vals_cal = np.linspace(0, 300, 1000)  # 1000 points for smooth curve
+# Generate calibration curve with more points for a smoother curve
+x_vals_cal = np.linspace(0, 350, 1000)  # 1000 points for smooth curve
 y_vals_cal = np.interp(x_vals_cal, concentracion_cal, absorbancia_cal)
 
 # Extend calibration curve for high values
@@ -40,9 +40,9 @@ y_vals_extended = np.where(x_vals_cal > concentracion_cal[-1],
                            absorbancia_cal[-1] + slope * (x_vals_cal - concentracion_cal[-1]), 
                            y_vals_cal)
 
-# Set dynamic axis limits to adjust 20% higher than the result
-max_concentracion_plot = concentracion * 1.2 if concentracion > max(concentracion_cal) else max(concentracion_cal) * 1.2
-max_absorbancia_plot = absorbancia_input * 1.2 if absorbancia_input > max(absorbancia_cal) else max(absorbancia_cal) * 1.2
+# Set dynamic axis limits to adjust 20% higher than the result and account for smaller values
+max_concentracion_plot = max(concentracion * 1.2, 350) if concentracion > max(concentracion_cal) else 350
+max_absorbancia_plot = max(absorbancia_input * 1.2, 3) if absorbancia_input > max(absorbancia_cal) else 3
 
 ax.set_xlim([0, max_concentracion_plot])
 ax.set_ylim([0, max_absorbancia_plot])
