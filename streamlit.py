@@ -3,96 +3,77 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate
 
-# Title of the app
-st.title('Concentration vs Absorbance')
+# Título de la aplicación
+st.title('Cálculo de Concentración Basado en Absorbancia (Múltiples Resultados)')
 
-# Calibration data
+# Nuevos valores del calibrador (Reactivo de control)
 absorbancia_cal = np.array([0.011, 0.071, 0.237, 0.474, 0.963, 2.524])
 concentracion_cal = np.array([0, 5, 25, 50, 100, 300])
 
-# Initialize session state for input fields
-if 'absorbancias_input' not in st.session_state:
-    st.session_state.absorbancias_input = [0.001]  # Default initial value
+# Crear una lista para almacenar múltiples resultados de absorbancia
+absorbancias_input = []
 
-# Function to add a new input field
-def agregar_campo():
-    st.session_state.absorbancias_input.append(0.001)  # Add a new field
+# Función para agregar nuevos campos de absorbancia
+def agregar_resultado():
+    # Crear un input numérico para ingresar cada absorbancia con 3 decimales
+    absorbancia_input = st.number_input(f'Ingresa el valor de absorbancia {len(absorbancias_input) + 1}:', min_value=0.001, max_value=10.0, step=0.001, value=0.275, format="%.3f")
+    absorbancias_input.append(absorbancia_input)
 
-# Function to delete an input field
-def eliminar_campo(indice):
-    if len(st.session_state.absorbancias_input) > 1:
-        st.session_state.absorbancias_input.pop(indice)
-
-# Button to add a new result
+# Botón para agregar más resultados
 if st.button('Agregar nuevo resultado'):
-    agregar_campo()
+    agregar_resultado()
 
-# Display input fields with delete button
-absorbancias_actualizadas = []
-for i, absorbancia in enumerate(st.session_state.absorbancias_input):
-    col1, col2 = st.columns([4, 1])
-    with col1:
-        nueva_absorbancia = st.number_input(
-            f'Absorbancia {i+1}:', 
-            min_value=0.001, 
-            max_value=10.0, 
-            value=float(absorbancia),
-            step=0.001, 
-            format="%.3f", 
-            key=f'abs_input_{i}'
-        )
-        absorbancias_actualizadas.append(nueva_absorbancia)
-    with col2:
-        if st.button('🗑️', key=f'delete_{i}'):
-            eliminar_campo(i)
+# Botón para quitar el último resultado
+if st.button('Quitar último resultado'):
+    if absorbancias_input:
+        absorbancias_input.pop()
 
-# Update session state with the new input values
-st.session_state.absorbancias_input = absorbancias_actualizadas
+# Mostrar la lista actual de absorbancias
+if absorbancias_input:
+    st.write(f"Resultados actuales de absorbancia: {absorbancias_input}")
 
-# Interpolation function with extrapolation
+# Crear la función de interpolación
 interp_func = interpolate.interp1d(absorbancia_cal, concentracion_cal, kind='linear', fill_value='extrapolate')
 
-# Calculate the corresponding concentrations for each input absorbance
-concentraciones = [interp_func(absorbancia) for absorbancia in st.session_state.absorbancias_input]
+# Calcular las concentraciones correspondientes a cada absorbancia
+concentraciones = [interp_func(absorbancia) for absorbancia in absorbancias_input]
 
-# Show calculated concentrations
-for i, (absorbancia, concentracion) in enumerate(zip(st.session_state.absorbancias_input, concentraciones), start=1):
+# Mostrar los resultados en la interfaz
+for i, (absorbancia, concentracion) in enumerate(zip(absorbancias_input, concentraciones), start=1):
     st.write(f"La concentración correspondiente a la absorbancia {absorbancia:.3f} (Resultado {i}) es: {concentracion:.2f} µIU/mL")
 
-# Plotting
+# Generar la gráfica
 fig, ax = plt.subplots()
 
-# Set dynamic axis limits with 20% margin beyond max input values
-max_concentracion = max(concentraciones + [max(concentracion_cal)])
-max_absorbancia = max(st.session_state.absorbancias_input + [max(absorbancia_cal)])
+# Limitar los ejes según los valores de entrada, dejando un margen del 20% más allá del mayor resultado
+if absorbancias_input:
+    max_concentracion = max(concentraciones)
+    max_absorbancia = max(absorbancias_input)
+else:
+    max_concentracion = max(concentracion_cal)
+    max_absorbancia = max(absorbancia_cal)
 
-ax.set_xlim([0, max_concentracion * 1.2])
-ax.set_ylim([0, max_absorbancia * 1.2])
+ax.set_xlim([0, max_concentracion * 1.2])  # Dejar un margen del 20% en el eje X
+ax.set_ylim([0, max_absorbancia * 1.2])  # Dejar un margen del 20% en el eje Y
 
-# Extended calibration curve
-x_vals_extendido = np.linspace(0, max_concentracion * 1.2, 100)
-y_vals_extendido = interp_func(x_vals_extendido)
+# Gráfica de la curva de calibración
+ax.plot(concentracion_cal, absorbancia_cal, label='Curva de Calibración (Calibrador)', color='blue')
 
-# Plot original calibration curve and its extended version
-ax.plot(concentracion_cal, absorbancia_cal, label='Curva de Calibración (Original)', color='blue')
-ax.plot(x_vals_extendido, y_vals_extendido, color='blue', linestyle='dashed')
-
-# Plot user results
-for absorbancia, concentracion in zip(st.session_state.absorbancias_input, concentraciones):
-    ax.scatter(concentracion, absorbancia, color='red')
+# Graficar cada punto de resultado
+for absorbancia, concentracion in zip(absorbancias_input, concentraciones):
+    ax.scatter(concentracion, absorbancia, color='red', label='Resultado')
     ax.plot([concentracion, concentracion], [0, absorbancia], 'k--')
     ax.plot([0, concentracion], [absorbancia, absorbancia], 'k--')
 
-# Labels and legend
 ax.set_xlabel('Concentración (µIU/mL)')
 ax.set_ylabel('Absorbancia (D.O)')
-ax.legend(['Curva de Calibración (Original)', 'Curva Extendida', 'Resultados'])
+ax.legend()
 ax.grid(True)
 
-# Show plot
+# Mostrar la gráfica en Streamlit
 st.pyplot(fig)
 
-# Display calibration control values
-st.write("### Controles")
+# Agregar el disclaimer con los valores del reactivo de control
+st.write("### Controls")
 st.write(f"- **Absorbancia**: {absorbancia_cal}")
 st.write(f"- **Concentración**: {concentracion_cal}")
