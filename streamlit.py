@@ -73,6 +73,7 @@ if st.button('Graficar'):
     max_concentracion = max(max(concentraciones), max(concentracion_cal))
     max_absorbancia = max(max(st.session_state.absorbancias_input), max(absorbancia_cal))
     
+    # Ajuste dinámico de los ejes con un 20% adicional más allá de los valores más altos
     ax.set_xlim([0, max_concentracion * 1.2])
     ax.set_ylim([0, max_absorbancia * 1.2])
     
