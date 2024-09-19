@@ -19,11 +19,11 @@ y_vals_cal = f(x_vals_cal)
 
 # Initialize session state for input fields if not exists
 if 'absorbancias_input' not in st.session_state:
-    st.session_state.absorbancias_input = [0.001]  # Default initial value
+    st.session_state.absorbancias_input = [0.050]  # Default initial value
 
 # Function to add a new input field
 def agregar_campo():
-    st.session_state.absorbancias_input.append(0.001)  # Add a new field
+    st.session_state.absorbancias_input.append(0.050)  # Add a new field
 
 # Function to delete an input field
 def eliminar_campo(indice):
@@ -95,12 +95,17 @@ max_absorbancia = max(max(st.session_state.absorbancias_input), max(absorbancia_
 min_concentracion = min(min(concentraciones), min(concentracion_cal))
 max_concentracion = max(max(concentraciones), max(concentracion_cal))
 
+# Set x-axis limits
 if min_absorbancia < 0.1:
-    ax.set_xlim(0, max(0.1, max_absorbancia * 1.1))
+    ax.set_xlim(0, max(0.1, min_absorbancia * 5))
 else:
     ax.set_xlim(0, max_absorbancia * 1.1)
 
-ax.set_ylim(0, max_concentracion * 1.1)
+# Set y-axis limits
+if min_concentracion < 10:
+    ax.set_ylim(0, max(10, min_concentracion * 5))
+else:
+    ax.set_ylim(0, max_concentracion * 1.1)
 
 # Show plot
 st.pyplot(fig)
