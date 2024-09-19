@@ -60,17 +60,16 @@ concentraciones = [interp_func(absorbancia) for absorbancia in st.session_state.
 for i, (absorbancia, concentracion) in enumerate(zip(st.session_state.absorbancias_input, concentraciones), start=1):
     st.write(f"La concentración correspondiente a la absorbancia {absorbancia:.3f} (Resultado {i}) es: {concentracion:.2f} µIU/mL")
 
-# Generate extrapolated calibration points to extend the blue line
+# Verificar si es necesario extrapolar la curva
 max_absorbancia_input = max(absorbancias_actualizadas)
 if max_absorbancia_input > absorbancia_cal[-1]:
-    # Extend the calibration curve beyond the last known point
-    # Using the slope between the last two points
+    # Extender la curva de calibración usando la pendiente de los últimos dos puntos
     slope = (concentracion_cal[-1] - concentracion_cal[-2]) / (absorbancia_cal[-1] - absorbancia_cal[-2])
-    new_absorbancias = np.linspace(absorbancia_cal[-1], max_absorbancia_input, num=50)
-    new_concentraciones = concentracion_cal[-1] + slope * (new_absorbancias - absorbancia_cal[-1])
+    extended_absorbancia = np.linspace(absorbancia_cal[-1], max_absorbancia_input * 1.2, num=50)
+    extended_concentracion = concentracion_cal[-1] + slope * (extended_absorbancia - absorbancia_cal[-1])
 
-    absorbancia_cal = np.concatenate((absorbancia_cal, new_absorbancias[1:]))
-    concentracion_cal = np.concatenate((concentracion_cal, new_concentraciones[1:]))
+    absorbancia_cal = np.concatenate((absorbancia_cal, extended_absorbancia[1:]))
+    concentracion_cal = np.concatenate((concentracion_cal, extended_concentracion[1:]))
 
 # Generar la gráfica
 fig, ax = plt.subplots()
